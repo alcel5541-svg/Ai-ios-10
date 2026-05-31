@@ -66,16 +66,17 @@ html, body {
   background-color: rgba(255, 255, 255, 0.08);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 6px 28px 6px 12px;
-  font-size: 13px;
+  border-radius: 6px;
+  padding: 4px 20px 4px 8px;
+  font-size: 11px;
   font-weight: 500;
   outline: none;
   cursor: pointer;
+  max-width: 130px;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 10px;
+  background-position: right 7px center;
+  background-size: 8px;
 }
 
 .provider-select:focus {
@@ -521,4 +522,32 @@ html, body {
   height: 2px;
   background-color: #ffffff;
   border-radius: 2px;
+}
+
+/* Gemini key selector — shown inline next to provider select */
+.provider-selector-wrapper {
+  display: -webkit-flex;
+  display: flex;
+  gap: 6px;
+  -webkit-align-items: center;
+  align-items: center;
+}
+
+.gemini-key-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #a0cfff;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  width: 48px;
+}
+
+.gemini-key-select:focus {
+  border-color: #3b82f6;
 }

@@ -18,6 +18,7 @@
   var sidebarOverlay   = document.getElementById('sidebar-overlay');
   var historyList      = document.getElementById('history-list');
   var newChatBtn       = document.getElementById('new-chat-btn');
+  var geminiKeySelect  = document.getElementById('gemini-key-select');
 
   // ── State ────────────────────────────────────────────────────────────────────
   var currentBase64   = null;
@@ -347,7 +348,12 @@
       }
     };
 
-    xhr.send(JSON.stringify({ message: messageText, provider: provider, image: sentImage }));
+    xhr.send(JSON.stringify({
+      message: messageText,
+      provider: provider,
+      image: sentImage,
+      geminiKey: provider === 'gemini' ? geminiKeySelect.value : undefined
+    }));
   }
 
   // ── Image upload ─────────────────────────────────────────────────────────────
@@ -385,6 +391,13 @@
       sendMessage();
     }
   });
+
+  // Show key selector only when Gemini is active
+  function updateGeminiKeyVisibility() {
+    geminiKeySelect.style.display = providerSelect.value === 'gemini' ? 'block' : 'none';
+  }
+  providerSelect.addEventListener('change', updateGeminiKeyVisibility);
+  updateGeminiKeyVisibility();
 
   // ── Init ──────────────────────────────────────────────────────────────────────
   scrollToBottom();

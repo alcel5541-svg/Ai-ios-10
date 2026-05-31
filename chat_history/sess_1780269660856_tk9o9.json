@@ -1,0 +1,17 @@
+{
+  "id": "sess_1780269660856_tk9o9",
+  "title": "Hola",
+  "createdAt": "2026-05-31T23:20:59.663Z",
+  "updatedAt": "2026-05-31T23:20:59.663Z",
+  "messages": [
+    {
+      "role": "user",
+      "text": "Hola",
+      "imgBase64": null
+    },
+    {
+      "role": "assistant",
+      "text": "¡Hola! Soy Gemini Math Mobile.\n¿En qué puedo ayudarte con matemáticas hoy?"
+    }
+  ]
+}

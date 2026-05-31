@@ -1,0 +1,22 @@
+{
+  "id": "sess_1780269561959_88gzv",
+  "title": "Hola",
+  "createdAt": "2026-05-31T23:19:20.770Z",
+  "updatedAt": "2026-05-31T23:19:20.770Z",
+  "messages": [
+    {
+      "role": "user",
+      "text": "Hola",
+      "imgBase64": null
+    },
+    {
+      "role": "user",
+      "text": "Hola",
+      "imgBase64": null
+    },
+    {
+      "role": "assistant",
+      "text": "¡Hola! Soy Gemini Math Mobile.\n\n*   Estoy listo para tus problemas matemáticos.\n*   Recuerda: todo lo matemático DEBE ir entre '$ ... $' o '$$ ... $$'.\n*   Soy conciso para tu pantalla."
+    }
+  ]
+}

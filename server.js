@@ -144,13 +144,23 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     if (selectedProvider === 'gemini') {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
+      // Support up to 3 Gemini keys; client sends geminiKey index (1, 2 or 3)
+      const geminiKeys = [
+        process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY,
+        process.env.GEMINI_API_KEY_2,
+        process.env.GEMINI_API_KEY_3
+      ].filter(Boolean);
+
+      const keyIndex = Math.max(0, Math.min(parseInt(req.body.geminiKey || '1', 10) - 1, geminiKeys.length - 1));
+      const apiKey = geminiKeys[keyIndex];
+
+      if (!apiKey) {
         return res.status(500).json({
-          error: 'Falta la GEMINI_API_KEY en el archivo .env del servidor.'
+          error: 'No hay ninguna GEMINI_API_KEY configurada en el archivo .env del servidor.'
         });
       }
 
+      console.log(`[Gemini] Usando key #${keyIndex + 1}`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       const parts = [{ text: message }];
 
