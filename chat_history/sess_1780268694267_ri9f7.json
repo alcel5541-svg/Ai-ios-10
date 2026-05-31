@@ -1,0 +1,17 @@
+{
+  "id": "sess_1780268694267_ri9f7",
+  "title": "Puedes decirme una ecuación 2x2 para pra…",
+  "createdAt": "2026-05-31T23:04:53.018Z",
+  "updatedAt": "2026-05-31T23:04:53.018Z",
+  "messages": [
+    {
+      "role": "user",
+      "text": "Puedes decirme una ecuación 2x2 para practicar",
+      "imgBase64": null
+    },
+    {
+      "role": "assistant",
+      "text": "Aquí tienes un sistema de ecuaciones lineales $2 \\times 2$ para resolver:\n\n**Sistema:**\n*   $2x + 3y = 13$\n*   $x - y = -1$\n\n**Sugerencia de pasos:**\n1. Despeja $x$ en la segunda ecuación: $x = y - 1$.\n2. Sustituye en la primera: $2(y - 1) + 3y = 13$.\n3. Resuelve para $y$, luego para $x$.\n\n**Resultado final:**\n$$\\boxed{x = 2, y = 3}$$"
+    }
+  ]
+}

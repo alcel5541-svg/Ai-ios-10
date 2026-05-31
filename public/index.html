@@ -4,24 +4,41 @@
   <meta charset="UTF-8">
   <title>Gemini Math Mobile</title>
   
-  <!-- Apple Mobile Web App Meta Tags for iOS 10 Standalone Mode -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="format-detection" content="telephone=no">
 
-  <!-- KaTeX CSS for rendering LaTeX equations -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  
-  <!-- Custom CSS for iOS 10 UI styling -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+  <!-- History Sidebar Overlay -->
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <!-- History Sidebar Panel -->
+  <aside id="history-sidebar" class="history-sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Historial</span>
+      <button id="new-chat-btn" class="new-chat-btn">+ Nueva</button>
+    </div>
+    <div id="history-list" class="history-list">
+      <p class="history-empty">Sin conversaciones guardadas.</p>
+    </div>
+  </aside>
+
   <!-- Fixed Top Header -->
   <header class="app-header">
     <div class="header-container">
-      <h1 class="app-title">Gemini Math</h1>
+      <div class="header-left">
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Historial">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+        <h1 class="app-title">Gemini Math</h1>
+      </div>
       <div class="provider-selector-wrapper">
         <select id="provider-select" class="provider-select">
           <option value="gemini">Gemini 2.5 Flash</option>
@@ -34,7 +51,6 @@
   <!-- Scrollable Chat Body -->
   <main id="chat-container" class="chat-container">
     <div id="chat-messages" class="chat-messages">
-      <!-- Welcome Message -->
       <div class="message system-message">
         <div class="message-content">
           <strong>¡Bienvenido a Gemini Math Mobile!</strong><br>
@@ -46,20 +62,16 @@
 
   <!-- Fixed Bottom Input Control -->
   <footer class="app-footer">
-    <!-- Image status bar shown when a file is selected -->
     <div id="image-preview-bar" class="image-preview-bar" style="display: none;">
       <span class="preview-text">📷 Imagen lista</span>
       <button type="button" id="clear-image-btn" class="clear-image-btn">×</button>
     </div>
     
     <form id="chat-form" class="chat-form" onsubmit="return false;">
-      <!-- Hidden file input and custom trigger button -->
       <input type="file" id="image-input" accept="image/*" style="display: none;">
       <button type="button" id="camera-btn" class="camera-btn">📷</button>
-      
       <textarea id="chat-input" class="chat-input" placeholder="Pregunta algo matemático..." rows="1" autocomplete="off" autocapitalize="sentences" spellcheck="false"></textarea>
       <button type="submit" id="send-button" class="send-button">
-        <!-- SVG Send Arrow, extremely lightweight -->
         <svg viewBox="0 0 24 24" width="20" height="20" class="send-icon">
           <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
         </svg>
@@ -67,11 +79,8 @@
     </form>
   </footer>
 
-  <!-- Load KaTeX JS scripts synchronously at the end of body to guarantee they are parsed before client code -->
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-  
-  <!-- Custom ES5 Client Script -->
   <script src="script.js"></script>
 </body>
 </html>

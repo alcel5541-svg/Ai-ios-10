@@ -3,34 +3,134 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable CORS so client devices on local network can connect
-app.use(cors());
+// Directory where chat history JSON files are stored
+const HISTORY_DIR = path.join(__dirname, 'chat_history');
+if (!fs.existsSync(HISTORY_DIR)) {
+  fs.mkdirSync(HISTORY_DIR, { recursive: true });
+}
 
-// Configure JSON body parser to accept larger base64 payloads (10MB)
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// Serve static assets from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Strict mathematical system prompt with \boxed{} requirement
 const SYSTEM_PROMPT = `Eres 'Gemini Math Mobile'. Cualquier término matemático, variable suelta ($x$, $y$), fracción, raíz, matriz o ecuación DEBE estar envuelto estrictamente en delimitadores LaTeX: '$ ... $' para texto en línea y '$$ ... $$' para bloques. Sé extremadamente conciso; el cliente es una pantalla de 4 pulgadas (1136x640), usa viñetas o pasos cortos y resalta el resultado final con \\boxed{}. Evita párrafos largos.`;
 
-// --- Ollama Cloud model configuration ---
-// These model IDs use the :cloud suffix to run on Ollama's cloud infrastructure.
-// See available models at: https://ollama.com/search?c=cloud
 const OLLAMA_CLOUD_MODELS = {
-  math1: process.env.OLLAMA_MODEL_1 || 'kimi-k2.6:cloud',
-  math2: process.env.OLLAMA_MODEL_2 || 'qwen3.5:cloud',
-  math3: process.env.OLLAMA_MODEL_3 || 'gemma4:31b:cloud'
+  math1: process.env.OLLAMA_MODEL_1 || 'llama3.3:cloud',
+  math2: process.env.OLLAMA_MODEL_2 || 'qwen3:cloud',
+  math3: process.env.OLLAMA_MODEL_3 || 'gemma3:cloud'
 };
 
-// Ollama Cloud OpenAI-compatible endpoint
+const OLLAMA_VISION_CAPABLE = {
+  math1: true,
+  math2: true,
+  math3: true
+};
+
 const OLLAMA_CLOUD_URL = 'https://ollama.com/v1/chat/completions';
+
+// ── History helpers ───────────────────────────────────────────────────────────
+
+function historyFilePath(id) {
+  // Sanitize id to prevent path traversal
+  var safe = id.replace(/[^a-zA-Z0-9_-]/g, '');
+  return path.join(HISTORY_DIR, safe + '.json');
+}
+
+function readSession(id) {
+  try {
+    var data = fs.readFileSync(historyFilePath(id), 'utf8');
+    return JSON.parse(data);
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeSession(id, session) {
+  fs.writeFileSync(historyFilePath(id), JSON.stringify(session, null, 2), 'utf8');
+}
+
+// ── History endpoints ─────────────────────────────────────────────────────────
+
+// List all sessions (metadata only, no messages)
+app.get('/api/history', function (req, res) {
+  try {
+    var files = fs.readdirSync(HISTORY_DIR).filter(function (f) {
+      return f.endsWith('.json');
+    });
+    var sessions = files.map(function (f) {
+      try {
+        var data = JSON.parse(fs.readFileSync(path.join(HISTORY_DIR, f), 'utf8'));
+        return {
+          id: data.id,
+          title: data.title || 'Sin título',
+          updatedAt: data.updatedAt,
+          messageCount: (data.messages || []).length
+        };
+      } catch (e) {
+        return null;
+      }
+    }).filter(Boolean);
+
+    // Sort by most recently updated
+    sessions.sort(function (a, b) {
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+
+    res.json({ sessions: sessions });
+  } catch (e) {
+    res.status(500).json({ error: 'Error leyendo el historial.' });
+  }
+});
+
+// Get a single session (with all messages)
+app.get('/api/history/:id', function (req, res) {
+  var session = readSession(req.params.id);
+  if (!session) return res.status(404).json({ error: 'Sesión no encontrada.' });
+  res.json(session);
+});
+
+// Save / update a session
+app.post('/api/history/:id', function (req, res) {
+  var id = req.params.id.replace(/[^a-zA-Z0-9_-]/g, '');
+  var body = req.body;
+  if (!body || !body.messages) {
+    return res.status(400).json({ error: 'Faltan los mensajes.' });
+  }
+
+  var now = new Date().toISOString();
+  var existing = readSession(id) || { id: id, createdAt: now };
+
+  var session = {
+    id: id,
+    title: body.title || existing.title || 'Sin título',
+    createdAt: existing.createdAt,
+    updatedAt: now,
+    messages: body.messages
+  };
+
+  writeSession(id, session);
+  res.json({ ok: true, session: { id: session.id, title: session.title, updatedAt: session.updatedAt } });
+});
+
+// Delete a session
+app.delete('/api/history/:id', function (req, res) {
+  var fp = historyFilePath(req.params.id);
+  try {
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Error eliminando la sesión.' });
+  }
+});
+
+// ── Chat endpoint ─────────────────────────────────────────────────────────────
 
 app.post('/api/chat', async (req, res) => {
   const { message, provider, image } = req.body;
@@ -43,7 +143,6 @@ app.post('/api/chat', async (req, res) => {
   console.log(`[Chat Request] Provider: ${selectedProvider}, Message length: ${message.length}, Has image: ${!!image}`);
 
   try {
-    // ── Gemini 2.5 Flash (multimodal) ────────────────────────────────────────
     if (selectedProvider === 'gemini') {
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
@@ -53,14 +152,11 @@ app.post('/api/chat', async (req, res) => {
       }
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
       const parts = [{ text: message }];
 
-      // Handle image multimodal payload if present
       if (image) {
         let mimeType = 'image/jpeg';
         let base64Data = image;
-
         if (image.startsWith('data:')) {
           const matches = image.match(/^data:([^;]+);base64,(.+)$/);
           if (matches && matches.length === 3) {
@@ -68,7 +164,6 @@ app.post('/api/chat', async (req, res) => {
             base64Data = matches[2];
           }
         }
-
         parts.push({ inlineData: { mimeType, data: base64Data } });
       }
 
@@ -83,16 +178,14 @@ app.post('/api/chat', async (req, res) => {
 
       const aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!aiText) throw new Error('Respuesta vacía o formato inesperado de Gemini API.');
-
       return res.json({ response: aiText });
 
-    // ── Ollama Cloud models (OpenAI-compatible API) ───────────────────────────
     } else if (OLLAMA_CLOUD_MODELS[selectedProvider]) {
 
-      // Images are only supported on Gemini 2.5 Flash
-      if (image) {
+      if (image && !OLLAMA_VISION_CAPABLE[selectedProvider]) {
+        const modelId = OLLAMA_CLOUD_MODELS[selectedProvider];
         return res.status(400).json({
-          error: 'La carga de fotos y análisis visual solo es compatible con el modelo Gemini 2.5 Flash.'
+          error: `El modelo ${modelId} aún no soporta imágenes en Ollama Cloud. Usa Gemini 2.5 Flash para análisis visual.`
         });
       }
 
@@ -105,11 +198,18 @@ app.post('/api/chat', async (req, res) => {
 
       const modelId = OLLAMA_CLOUD_MODELS[selectedProvider];
 
+      const userContent = (image && OLLAMA_VISION_CAPABLE[selectedProvider])
+        ? [
+            { type: 'text', text: message },
+            { type: 'image_url', image_url: { url: image } }
+          ]
+        : message;
+
       const payload = {
         model: modelId,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: message }
+          { role: 'user', content: userContent }
         ]
       };
 
@@ -125,7 +225,6 @@ app.post('/api/chat', async (req, res) => {
 
       const aiText = response.data.choices?.[0]?.message?.content;
       if (!aiText) throw new Error(`Respuesta vacía o formato inesperado de Ollama Cloud (${modelId}).`);
-
       return res.json({ response: aiText });
 
     } else {
@@ -134,20 +233,17 @@ app.post('/api/chat', async (req, res) => {
 
   } catch (error) {
     console.error('[Error de API]:', error.message);
-
     if (error.response) {
       console.error('[Detalles del Error]:', JSON.stringify(error.response.data));
       const errMsg = error.response.data?.error?.message || error.message;
       return res.status(500).json({ error: `Error en ${selectedProvider}: ${errMsg}` });
     }
-
     return res.status(500).json({
       error: `Error al procesar la petición con ${selectedProvider}: ${error.message}`
     });
   }
 });
 
-// Fallback to index.html for SPA behavior
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -157,5 +253,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(` Gemini Math Mobile backend corriendo`);
   console.log(` Puerto local: http://localhost:${PORT}`);
   console.log(` Para red local (iOS 10): http://<TU_IP_LOCAL>:${PORT}`);
+  console.log(` Historial en: ${HISTORY_DIR}`);
   console.log(`=========================================`);
 });
