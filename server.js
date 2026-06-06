@@ -230,7 +230,7 @@ app.post('/api/chat', async (req, res) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${cloudKey}`
         },
-        timeout: 30000
+        timeout: 3000000
       });
 
       const aiText = response.data.choices?.[0]?.message?.content;
